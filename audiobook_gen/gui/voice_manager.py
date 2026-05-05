@@ -121,7 +121,7 @@ class VoiceManagerDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Gestor de Voces Offline")
+        self.setWindowTitle("Offline Voice Manager")
         self.setMinimumSize(750, 550)
         self.setStyleSheet(VOICE_MANAGER_STYLESHEET)
         self._setup_ui()
@@ -132,22 +132,22 @@ class VoiceManagerDialog(QDialog):
         layout.setContentsMargins(25, 25, 25, 25)
         layout.setSpacing(15)
         
-        # Encabezado
+        # Header
         header = QVBoxLayout()
-        title = QLabel("📥 Biblioteca de Voces Offline")
+        title = QLabel("📥 Offline Voice Library")
         title.setObjectName("titleLabel")
-        desc = QLabel("Descarga modelos de alta calidad para generar audio sin conexión a Internet.")
+        desc = QLabel("Download high-quality voice models to create audiobooks without an internet connection.")
         desc.setObjectName("descLabel")
         header.addWidget(title)
         header.addWidget(desc)
         layout.addLayout(header)
 
-        # Filtros
+        # Filters
         filter_row = QHBoxLayout()
         filter_row.setSpacing(20)
         
         engine_box = QVBoxLayout()
-        engine_box.addWidget(QLabel("Motor TTS:"))
+        engine_box.addWidget(QLabel("Voice Engine:"))
         self.combo_engine = QComboBox()
         self.combo_engine.addItems(["Kokoro (V1.0)", "Piper (Local)"])
         self.combo_engine.currentIndexChanged.connect(self._load_data)
@@ -155,7 +155,7 @@ class VoiceManagerDialog(QDialog):
         filter_row.addLayout(engine_box)
         
         lang_box = QVBoxLayout()
-        lang_box.addWidget(QLabel("Idioma del modelo:"))
+        lang_box.addWidget(QLabel("Model Language:"))
         self.combo_lang = QComboBox()
         self.combo_lang.addItems(LANGUAGE_ORDER)
         self.combo_lang.currentIndexChanged.connect(self._load_data)
@@ -165,24 +165,24 @@ class VoiceManagerDialog(QDialog):
         filter_row.addStretch()
         layout.addLayout(filter_row)
 
-        # Tabla de Voces
+        # Voices Table
         self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Nombre de la Voz", "Estado", "Acción"])
+        self.table.setHorizontalHeaderLabels(["Voice Name & Description", "Status", "Action"])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Fixed)
-        self.table.setColumnWidth(1, 150)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table.setAlternatingRowColors(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setShowGrid(False)
         layout.addWidget(self.table)
 
-        # Estado de Descarga
+        # Download Status
         self.download_panel = QFrame()
         self.download_panel.setStyleSheet("background-color: #12121a; border-radius: 10px; padding: 10px;")
         self.download_panel.setVisible(False)
         dp_layout = QVBoxLayout(self.download_panel)
         
-        self.lbl_status = QLabel("Preparando descarga...")
+        self.lbl_status = QLabel("Preparing download...")
         self.lbl_status.setStyleSheet("color: #8c9eff; font-weight: bold;")
         dp_layout.addWidget(self.lbl_status)
         
@@ -190,10 +190,10 @@ class VoiceManagerDialog(QDialog):
         dp_layout.addWidget(self.progress_bar)
         layout.addWidget(self.download_panel)
 
-        # Botones Inferiores
+        # Footer Buttons
         footer = QHBoxLayout()
         footer.addStretch()
-        self.btn_close = QPushButton("Cerrar Gestor")
+        self.btn_close = QPushButton("Close Manager")
         self.btn_close.setObjectName("closeBtn")
         self.btn_close.setMinimumWidth(120)
         self.btn_close.clicked.connect(self.accept)
@@ -207,19 +207,19 @@ class VoiceManagerDialog(QDialog):
 
         if engine_idx == 0: # Kokoro
             installed = is_kokoro_installed()
-            self._add_row("🧠 Modelo Base Kokoro v1.0", installed, "kokoro_base", "Modelo universal (requerido para todas las voces Kokoro)")
+            self._add_row("🧠 Kokoro v1.0 Base Model", installed, "kokoro_base", "Universal model (required for all Kokoro voices)")
         else: # Piper
             voices = PIPER_VOICES.get(lang, [])
             for v in voices:
                 installed = is_piper_voice_installed(v.id)
-                desc = f"Voz {v.gender} ({v.locale})"
+                desc = f"Voice {v.gender} ({v.locale})"
                 self._add_row(f"🎙️ {v.display_name}", installed, v.id, desc)
 
     def _add_row(self, name, installed, voice_id, description):
         row = self.table.rowCount()
         self.table.insertRow(row)
         
-        # Columna 1: Nombre y descripción
+        # Column 1: Name and description
         name_widget = QWidget()
         nw_layout = QVBoxLayout(name_widget)
         nw_layout.setContentsMargins(10, 5, 10, 5)
@@ -232,15 +232,15 @@ class VoiceManagerDialog(QDialog):
         self.table.setCellWidget(row, 0, name_widget)
         self.table.setRowHeight(row, 60)
         
-        # Columna 2: Estado con emoji
-        status_text = "✅ Instalado" if installed else "☁️ Disponible"
+        # Column 2: Status with emoji
+        status_text = "✅ Installed" if installed else "☁️ Available"
         status_item = QTableWidgetItem(status_text)
         status_item.setTextAlignment(Qt.AlignCenter)
         if installed: status_item.setForeground(Qt.green)
         self.table.setItem(row, 1, status_item)
         
-        # Columna 3: Botón de acción
-        btn = QPushButton("Descargar" if not installed else "Eliminar")
+        # Column 3: Action button
+        btn = QPushButton("Download" if not installed else "Remove")
         if installed: btn.setObjectName("dangerBtn")
         btn.clicked.connect(lambda: self._on_action(voice_id, not installed))
         
@@ -252,7 +252,7 @@ class VoiceManagerDialog(QDialog):
 
     def _on_action(self, voice_id, is_download):
         if not is_download:
-            confirm = QMessageBox.question(self, "Confirmar borrado", "¿Estás seguro de que quieres eliminar esta voz para liberar espacio?", QMessageBox.Yes | QMessageBox.No)
+            confirm = QMessageBox.question(self, "Confirm removal", "Are you sure you want to remove this voice to free up space?", QMessageBox.Yes | QMessageBox.No)
             if confirm == QMessageBox.Yes:
                 if voice_id == "kokoro_base": shutil.rmtree(kokoro_model_dir(), ignore_errors=True)
                 else:
@@ -262,7 +262,7 @@ class VoiceManagerDialog(QDialog):
                 self.voices_changed.emit()
             return
 
-        # Lógica de descarga
+        # Download logic
         if voice_id == "kokoro_base":
             tasks = [(KOKORO_MODEL_INFO["url"], kokoro_model_dir() / "kokoro-v1.0.onnx"),
                      (KOKORO_MODEL_INFO["voices_url"], kokoro_model_dir() / "voices-v1.0.bin")]
@@ -284,13 +284,13 @@ class VoiceManagerDialog(QDialog):
         if self._current_task >= len(self._tasks):
             self.download_panel.setVisible(False)
             self.btn_close.setEnabled(True)
-            QMessageBox.information(self, "¡Completado!", "La voz se ha instalado correctamente y ya puedes seleccionarla.")
+            QMessageBox.information(self, "Completed!", "The voice has been installed correctly and is now ready to use.")
             self._load_data()
             self.voices_changed.emit()
             return
 
         url, dest = self._tasks[self._current_task]
-        self.lbl_status.setText(f"Descargando componente {self._current_task + 1} de {len(self._tasks)}: {dest.name}")
+        self.lbl_status.setText(f"Downloading component {self._current_task + 1} of {len(self._tasks)}: {dest.name}")
         self.worker = DownloadWorker(url, dest)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.finished.connect(self._on_task_done)
@@ -299,6 +299,6 @@ class VoiceManagerDialog(QDialog):
     def _on_task_done(self, ok, msg):
         if ok: self._current_task += 1; self._run_next_task()
         else:
-            QMessageBox.critical(self, "Error de Red", f"No se pudo completar la descarga:\n{msg}")
+            QMessageBox.critical(self, "Network Error", f"Could not complete the download:\n{msg}")
             self.download_panel.setVisible(False)
             self.btn_close.setEnabled(True)

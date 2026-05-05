@@ -137,7 +137,7 @@ class MainWindow(QMainWindow):
         self._connect_signals()
 
     def _init_ui(self) -> None:
-        self.setWindowTitle("SimpleAudioBookGen — Conversor Premium")
+        self.setWindowTitle("SimpleAudioBookGen — PDF to Audiobook")
         self.setMinimumSize(1000, 700)
         self.setStyleSheet(MODERN_STYLESHEET)
 
@@ -147,50 +147,50 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(30, 30, 30, 30)
         main_layout.setSpacing(20)
 
-        # Encabezado Detallado
+        # Header Section
         header = QVBoxLayout()
         title = QLabel("SimpleAudioBookGen")
         title.setObjectName("headerTitle")
-        subtitle = QLabel("Crea audiolibros de alta calidad con voces neuronales IA a partir de tus documentos PDF")
+        subtitle = QLabel("Turn PDFs into high-quality audiobooks using AI neural voices")
         subtitle.setObjectName("headerSubtitle")
         header.addWidget(title)
         header.addWidget(subtitle)
         main_layout.addLayout(header)
 
-        # Cuerpo Principal: Dos Columnas
+        # Main Content: Two Columns
         content_row = QHBoxLayout()
         content_row.setSpacing(25)
 
-        # Columna Izquierda: Entrada y Destino
+        # Left Column: Input and Output
         left_col = QVBoxLayout()
         
-        # Paso 1: Selección de Archivo
-        input_group = QGroupBox("📥 PASO 1: SELECCIONAR ORIGEN")
-        input_group.setToolTip("Elige el archivo PDF que deseas convertir a voz")
+        # Step 1: File Selection
+        input_group = QGroupBox("📥 1. SELECT SOURCE")
+        input_group.setToolTip("Choose the PDF file you want to convert to speech")
         input_layout = QVBoxLayout(input_group)
-        self.btn_select_pdf = QPushButton("Seleccionar Archivo PDF")
+        self.btn_select_pdf = QPushButton("Choose PDF Document")
         self.btn_select_pdf.setMinimumHeight(45)
-        self.lbl_pdf_path = QLabel("Arrastra el PDF aquí o haz clic arriba")
+        self.lbl_pdf_path = QLabel("Drop your PDF here or click above")
         self.lbl_pdf_path.setAlignment(Qt.AlignCenter)
         self.lbl_pdf_path.setStyleSheet("color: #707085; border: 2px dashed #2d2d3d; border-radius: 10px; padding: 20px;")
         input_layout.addWidget(self.btn_select_pdf)
         input_layout.addWidget(self.lbl_pdf_path)
         left_col.addWidget(input_group)
 
-        # Paso 2: Destino y Calidad
-        output_group = QGroupBox("📤 PASO 2: DESTINO Y SALIDA")
-        output_group.setToolTip("Configura dónde se guardará el audio y su calidad")
+        # Step 2: Output and Quality
+        output_group = QGroupBox("📤 2. OUTPUT SETTINGS")
+        output_group.setToolTip("Configure where to save the audio and its quality")
         output_layout = QGridLayout(output_group)
-        output_layout.addWidget(QLabel("Guardar audio en:"), 0, 0)
+        output_layout.addWidget(QLabel("Save audiobook as:"), 0, 0)
         self.edit_output = QLineEdit()
-        self.edit_output.setPlaceholderText("Selecciona la ruta de destino...")
+        self.edit_output.setPlaceholderText("Select destination path...")
         self.btn_browse_output = QPushButton("...")
         self.btn_browse_output.setFixedWidth(40)
         self.btn_browse_output.setObjectName("secondaryBtn")
         output_layout.addWidget(self.edit_output, 0, 1)
         output_layout.addWidget(self.btn_browse_output, 0, 2)
         
-        output_layout.addWidget(QLabel("Calidad (Bitrate):"), 1, 0)
+        output_layout.addWidget(QLabel("Audio quality:"), 1, 0)
         self.combo_bitrate = QComboBox()
         self.combo_bitrate.addItems(["64k", "128k", "192k", "256k", "320k"])
         self.combo_bitrate.setCurrentText("192k")
@@ -199,45 +199,55 @@ class MainWindow(QMainWindow):
         left_col.addStretch()
         content_row.addLayout(left_col, 1)
 
-        # Columna Derecha: Configuración de Voz
+        # Right Column: Voice Settings
         right_col = QVBoxLayout()
-        tts_group = QGroupBox("🎙️ PASO 3: CONFIGURACIÓN DE VOZ")
-        tts_group.setToolTip("Elige el motor, el idioma y la voz que más te guste")
+        tts_group = QGroupBox("🎙️ 3. VOICE SETTINGS")
+        tts_group.setToolTip("Select the engine, language, and voice that suits your book")
         tts_layout = QVBoxLayout(tts_group)
         
-        tts_layout.addWidget(QLabel("Motor de Síntesis:"))
+        tts_layout.addWidget(QLabel("Voice Mode:"))
         self.combo_engine = QComboBox()
-        self.combo_engine.addItems(["Edge-TTS (Online)", "Kokoro (Offline)", "Piper (Offline)", "SAPI5 (Local)"])
+        self.combo_engine.addItems([
+            "Natural Online Voice (Highest Quality)",
+            "Offline Neural Voice (High Quality)",
+            "Fast Offline Voice (Lightweight)",
+            "Basic System Voice (Windows Default)"
+        ])
         tts_layout.addWidget(self.combo_engine)
+
+        self.lbl_engine_desc = QLabel("")
+        self.lbl_engine_desc.setWordWrap(True)
+        self.lbl_engine_desc.setStyleSheet("color: #8c9eff; font-size: 11px; font-style: italic; margin-bottom: 10px;")
+        tts_layout.addWidget(self.lbl_engine_desc)
         
-        tts_layout.addWidget(QLabel("Idioma del Documento:"))
+        tts_layout.addWidget(QLabel("Document Language:"))
         self.combo_lang = QComboBox()
         self.combo_lang.addItems(LANGUAGE_ORDER)
         tts_layout.addWidget(self.combo_lang)
         
-        tts_layout.addWidget(QLabel("Seleccionar Voz:"))
+        tts_layout.addWidget(QLabel("Select Voice:"))
         voice_row = QHBoxLayout()
         self.combo_voice = QComboBox()
-        self.btn_preview = QPushButton("▶ Escuchar")
+        self.btn_preview = QPushButton("▶ Preview")
         self.btn_preview.setObjectName("secondaryBtn")
-        self.btn_preview.setToolTip("Reproduce una muestra de la voz seleccionada")
+        self.btn_preview.setToolTip("Play a sample of the selected voice")
         voice_row.addWidget(self.combo_voice, 1)
         voice_row.addWidget(self.btn_preview)
         tts_layout.addLayout(voice_row)
         
-        self.btn_manage_voices = QPushButton("Gestionar Voces Offline (Instalar/Borrar)")
+        self.btn_manage_voices = QPushButton("Manage Offline Voices")
         self.btn_manage_voices.setObjectName("secondaryBtn")
         tts_layout.addWidget(self.btn_manage_voices)
         tts_layout.addStretch()
         
-        # Botón de Acción Principal
-        self.btn_generate = QPushButton("INICIAR CONVERSIÓN A AUDIOLIBRO")
+        # Main Action Button
+        self.btn_generate = QPushButton("CREATE AUDIOBOOK")
         self.btn_generate.setObjectName("accentBtn")
         self.btn_generate.setMinimumHeight(60)
         self.btn_generate.setEnabled(False)
         tts_layout.addWidget(self.btn_generate)
         
-        self.btn_cancel = QPushButton("DETENER PROCESO")
+        self.btn_cancel = QPushButton("CANCEL PROCESS")
         self.btn_cancel.setObjectName("dangerBtn")
         self.btn_cancel.setMinimumHeight(50)
         self.btn_cancel.setVisible(False)
@@ -247,14 +257,14 @@ class MainWindow(QMainWindow):
         content_row.addLayout(right_col, 1)
         main_layout.addLayout(content_row)
 
-        # Panel de Progreso
-        progress_group = QGroupBox("📊 ESTADO DEL PROCESO")
+        # Progress Panel
+        progress_group = QGroupBox("📊 PROGRESS")
         progress_layout = QVBoxLayout(progress_group)
-        self.lbl_status = QLabel("Listo para comenzar")
+        self.lbl_status = QLabel("Ready")
         self.lbl_status.setObjectName("statusText")
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 1000)
-        self.lbl_detail = QLabel("Por favor, selecciona un archivo PDF para analizar su contenido.")
+        self.lbl_detail = QLabel("Choose a PDF to get started.")
         progress_layout.addWidget(self.lbl_status)
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.lbl_detail)
@@ -264,12 +274,13 @@ class MainWindow(QMainWindow):
         self.btn_select_pdf.clicked.connect(self._on_select_pdf)
         self.btn_browse_output.clicked.connect(self._on_browse_output)
         self.combo_lang.currentIndexChanged.connect(self._populate_voices)
-        self.combo_engine.currentIndexChanged.connect(self._populate_voices)
+        self.combo_engine.currentIndexChanged.connect(self._on_engine_changed)
         self.btn_preview.clicked.connect(self._on_preview)
         self.btn_generate.clicked.connect(self._on_generate)
         self.btn_cancel.clicked.connect(self._on_cancel)
         self.btn_manage_voices.clicked.connect(self._on_manage_voices)
         self._populate_voices()
+        self._on_engine_changed()
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls(): e.acceptProposedAction()
@@ -280,7 +291,7 @@ class MainWindow(QMainWindow):
             if path.lower().endswith(".pdf"): self._load_pdf(path)
 
     def _on_select_pdf(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Seleccionar PDF", "", "Archivos PDF (*.pdf)")
+        path, _ = QFileDialog.getOpenFileName(self, "Select PDF", "", "PDF Files (*.pdf)")
         if path: self._load_pdf(path)
 
     def _load_pdf(self, path):
@@ -289,11 +300,22 @@ class MainWindow(QMainWindow):
         self.lbl_pdf_path.setStyleSheet("color: #00c853; border: 2px solid #00c853; border-radius: 10px; padding: 20px; font-weight: bold;")
         if not self.edit_output.text(): self.edit_output.setText(str(Path(path).with_suffix(".mp3")))
         self.btn_generate.setEnabled(True)
-        self.lbl_status.setText("Documento analizado correctamente")
+        self.lbl_status.setText("Document analyzed successfully")
 
     def _on_browse_output(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Guardar como", self.edit_output.text(), "Audio MP3 (*.mp3)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save audiobook as", self.edit_output.text(), "MP3 Audio (*.mp3)")
         if path: self.edit_output.setText(path)
+
+    def _on_engine_changed(self):
+        idx = self.combo_engine.currentIndex()
+        descs = [
+            "Best quality. Requires an internet connection.",
+            "High-quality offline voice. Requires local model download.",
+            "Lightweight local voice. Works offline after voice download.",
+            "Windows fallback voice. Works offline but may sound robotic."
+        ]
+        self.lbl_engine_desc.setText(descs[idx])
+        self._populate_voices()
 
     def _populate_voices(self):
         self.combo_voice.clear()
@@ -301,11 +323,14 @@ class MainWindow(QMainWindow):
         if eng_idx == 0: voices = EDGE_VOICES.get(lang, [])
         elif eng_idx == 1: voices = KOKORO_VOICES.get(lang, [])
         elif eng_idx == 2: voices = PIPER_VOICES.get(lang, [])
-        else: self.combo_voice.addItem("Voz predeterminada del sistema", "sapi"); return
+        else: self.combo_voice.addItem("System Default Voice", "sapi"); return
+        
         for v in voices:
             label = v.display_name
-            if eng_idx == 1 and not is_kokoro_installed(): label += " [No instalado]"
-            elif eng_idx == 2 and not is_piper_voice_installed(v.id): label += " [No instalado]"
+            if eng_idx == 1 and not is_kokoro_installed(): 
+                label += " [Download Required]"
+            elif eng_idx == 2 and not is_piper_voice_installed(v.id): 
+                label += " [Download Required]"
             self.combo_voice.addItem(label, v.id)
 
     def _on_preview(self):
@@ -314,16 +339,16 @@ class MainWindow(QMainWindow):
         if engine == "kokoro" and not is_kokoro_installed(): return
         if engine == "piper" and not is_piper_voice_installed(v_id): return
         self.btn_preview.setEnabled(False)
-        self.btn_preview.setText("⌛ Generando...")
+        self.btn_preview.setText("⌛ Generating...")
         self.preview_worker = AudioPreviewWorker(self.settings, v_id, engine, self.combo_lang.currentText())
         self.preview_worker.finished.connect(self._on_preview_done)
         self.preview_worker.start()
 
     def _on_preview_done(self, ok, res):
         self.btn_preview.setEnabled(True)
-        self.btn_preview.setText("▶ Escuchar")
+        self.btn_preview.setText("▶ Preview")
         if ok: self.player.stop(); self.player.setSource(QUrl.fromLocalFile(os.path.abspath(res))); self.player.play()
-        else: QMessageBox.critical(self, "Error", f"Fallo en la muestra: {res}")
+        else: QMessageBox.critical(self, "Error", f"Preview failed: {res}")
 
     def _on_generate(self):
         self.settings.tts.engine = ["edge", "kokoro", "piper", "sapi"][self.combo_engine.currentIndex()]
@@ -341,12 +366,12 @@ class MainWindow(QMainWindow):
 
     def _on_finished(self, res):
         self.btn_generate.setVisible(True); self.btn_cancel.setVisible(False)
-        if res.success: QMessageBox.information(self, "Éxito", f"Audiolibro listo en:\n{res.output_path}")
-        else: QMessageBox.critical(self, "Error", f"Error: {res.error}")
+        if res.success: QMessageBox.information(self, "Success", f"Audiobook created successfully at:\n{res.output_path}")
+        else: QMessageBox.critical(self, "Error", f"An error occurred: {res.error}")
 
     def _on_cancel(self):
         if self.pipeline: self.pipeline.cancel()
-        self.lbl_status.setText("Cancelando proceso...")
+        self.lbl_status.setText("Cancelling process...")
 
     def _on_manage_voices(self):
         from audiobook_gen.gui.voice_manager import VoiceManagerDialog
