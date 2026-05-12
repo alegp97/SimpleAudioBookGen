@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import logging
+import copy
 from pathlib import Path
 from typing import Optional
 
@@ -25,10 +26,25 @@ from audiobook_gen.pipeline import AudioBookPipeline, PipelineProgress, Pipeline
 from audiobook_gen.utils.logger import get_logger
 from audiobook_gen.voices import (
     EDGE_VOICES, KOKORO_VOICES, PIPER_VOICES, LANGUAGE_ORDER,
-    is_kokoro_installed, is_piper_voice_installed, SAMPLE_TEXTS
+    is_kokoro_installed, is_piper_voice_installed, kokoro_model_dir,
+    piper_model_dir, SAMPLE_TEXTS
 )
+from audiobook_gen.core.pdf_analyzer import PdfAnalyzer, PdfAnalysis
 
 log = get_logger("main_window")
+
+class PdfAnalysisWorker(QThread):
+    finished = Signal(object)
+    def __init__(self, pdf_path: str):
+        super().__init__()
+        self.pdf_path = pdf_path
+    def run(self):
+        try:
+            analyzer = PdfAnalyzer()
+            result = analyzer.analyze(self.pdf_path)
+            self.finished.emit(result)
+        except Exception as e:
+            self.finished.emit(str(e))
 
 # Estilos Modernos Premium
 MODERN_STYLESHEET = """
@@ -114,20 +130,23 @@ class AudioPreviewWorker(QThread):
         from audiobook_gen.core.tts_engine import create_tts_engine
         from audiobook_gen.core.text_segmenter import TextChunk
         try:
-            config = self.settings.tts
+            config = copy.deepcopy(self.settings.tts)
             config.engine, config.voice = self.engine, self.voice_id
             tts = create_tts_engine(config, voice_id=self.voice_id)
             sample = SAMPLE_TEXTS.get(self.lang, SAMPLE_TEXTS["Spanish"])
-            temp_path = os.path.join(self.settings.temp_dir, f"preview_{self.voice_id}.mp3")
+            temp_path = os.path.join(
+                self.settings.temp_dir,
+                f"preview_{self.voice_id}{tts.preferred_extension()}",
+            )
             tts.synthesize(TextChunk(index=0, text=sample), temp_path)
             self.finished.emit(True, temp_path)
         except Exception as e:
             self.finished.emit(False, str(e))
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(self, settings: Optional[Settings] = None) -> None:
         super().__init__()
-        self.settings = Settings()
+        self.settings = settings or Settings()
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
@@ -193,7 +212,7 @@ class MainWindow(QMainWindow):
         output_layout.addWidget(QLabel("Audio quality:"), 1, 0)
         self.combo_bitrate = QComboBox()
         self.combo_bitrate.addItems(["64k", "128k", "192k", "256k", "320k"])
-        self.combo_bitrate.setCurrentText("192k")
+        self.combo_bitrate.setCurrentText(self.settings.audio.mp3_bitrate)
         output_layout.addWidget(self.combo_bitrate, 1, 1, 1, 2)
         left_col.addWidget(output_group)
         left_col.addStretch()
@@ -235,9 +254,10 @@ class MainWindow(QMainWindow):
         voice_row.addWidget(self.btn_preview)
         tts_layout.addLayout(voice_row)
         
-        self.btn_manage_voices = QPushButton("Manage Offline Voices")
-        self.btn_manage_voices.setObjectName("secondaryBtn")
-        tts_layout.addWidget(self.btn_manage_voices)
+        self.lbl_manual_models = QLabel("")
+        self.lbl_manual_models.setWordWrap(True)
+        self.lbl_manual_models.setStyleSheet("color: #707085; font-size: 11px;")
+        tts_layout.addWidget(self.lbl_manual_models)
         tts_layout.addStretch()
         
         # Main Action Button
@@ -252,10 +272,38 @@ class MainWindow(QMainWindow):
         self.btn_cancel.setMinimumHeight(50)
         self.btn_cancel.setVisible(False)
         tts_layout.addWidget(self.btn_cancel)
-
         right_col.addWidget(tts_group)
         content_row.addLayout(right_col, 1)
         main_layout.addLayout(content_row)
+
+        # Bottom Section: Estimates and Progress
+        bottom_row = QHBoxLayout()
+
+        # Document Estimate Panel
+        estimate_group = QGroupBox("📄 DOCUMENT ESTIMATE")
+        estimate_layout = QVBoxLayout(estimate_group)
+        self.lbl_no_pdf = QLabel("No document loaded")
+        self.lbl_no_pdf.setAlignment(Qt.AlignCenter)
+        self.lbl_no_pdf.setStyleSheet("color: #707085;")
+
+        self.analysis_frame = QFrame()
+        af_layout = QGridLayout(self.analysis_frame)
+        self.lbl_pages = QLabel("Pages: -")
+        self.lbl_chars = QLabel("Characters: -")
+        self.lbl_duration = QLabel("Est. Duration: -")
+        self.lbl_ocr_warning = QLabel("⚠ OCR Required (Scanned PDF)")
+        self.lbl_ocr_warning.setStyleSheet("color: #ffb74d; font-weight: bold;")
+        self.lbl_ocr_warning.setVisible(False)
+
+        af_layout.addWidget(self.lbl_pages, 0, 0)
+        af_layout.addWidget(self.lbl_chars, 0, 1)
+        af_layout.addWidget(self.lbl_duration, 1, 0)
+        af_layout.addWidget(self.lbl_ocr_warning, 1, 1)
+        self.analysis_frame.setVisible(False)
+
+        estimate_layout.addWidget(self.lbl_no_pdf)
+        estimate_layout.addWidget(self.analysis_frame)
+        bottom_row.addWidget(estimate_group, 1)
 
         # Progress Panel
         progress_group = QGroupBox("📊 PROGRESS")
@@ -268,7 +316,9 @@ class MainWindow(QMainWindow):
         progress_layout.addWidget(self.lbl_status)
         progress_layout.addWidget(self.progress_bar)
         progress_layout.addWidget(self.lbl_detail)
-        main_layout.addWidget(progress_group)
+        bottom_row.addWidget(progress_group, 1)
+
+        main_layout.addLayout(bottom_row)
 
     def _connect_signals(self) -> None:
         self.btn_select_pdf.clicked.connect(self._on_select_pdf)
@@ -278,7 +328,6 @@ class MainWindow(QMainWindow):
         self.btn_preview.clicked.connect(self._on_preview)
         self.btn_generate.clicked.connect(self._on_generate)
         self.btn_cancel.clicked.connect(self._on_cancel)
-        self.btn_manage_voices.clicked.connect(self._on_manage_voices)
         self._populate_voices()
         self._on_engine_changed()
 
@@ -298,24 +347,50 @@ class MainWindow(QMainWindow):
         self._pdf_path = path
         self.lbl_pdf_path.setText(Path(path).name)
         self.lbl_pdf_path.setStyleSheet("color: #00c853; border: 2px solid #00c853; border-radius: 10px; padding: 20px; font-weight: bold;")
-        if not self.edit_output.text(): self.edit_output.setText(str(Path(path).with_suffix(".mp3")))
-        self.btn_generate.setEnabled(True)
-        self.lbl_status.setText("Document analyzed successfully")
+
+        # Propose output name if empty or just updated PDF
+        if not self.edit_output.text() or self.edit_output.text().endswith(".mp3"):
+            output_name = Path(path).stem + ".mp3"
+            self.edit_output.setText(str(Path(path).parent / output_name))
+
+        self.lbl_status.setText("Analyzing document...")
+        self.analysis_frame.setVisible(False)
+        self.lbl_no_pdf.setVisible(True)
+
+        self.analysis_worker = PdfAnalysisWorker(path)
+        self.analysis_worker.finished.connect(self._on_analysis_finished)
+        self.analysis_worker.start()
 
     def _on_browse_output(self):
         path, _ = QFileDialog.getSaveFileName(self, "Save audiobook as", self.edit_output.text(), "MP3 Audio (*.mp3)")
         if path: self.edit_output.setText(path)
 
+    def _on_analysis_finished(self, result):
+        if isinstance(result, str):
+            self.lbl_status.setText(f"Analysis failed: {result}")
+            return
+
+        self.lbl_pages.setText(f"Pages: {result.pages}")
+        self.lbl_chars.setText(f"Characters: {result.characters:,}")
+        self.lbl_duration.setText(f"Est. Duration: {result.estimated_duration_minutes:.0f} min")
+        self.lbl_ocr_warning.setVisible(result.is_scanned_likelihood > 0.5)
+
+        self.lbl_no_pdf.setVisible(False)
+        self.analysis_frame.setVisible(True)
+        self.lbl_status.setText("Ready to convert")
+        self.btn_generate.setEnabled(True)
+
     def _on_engine_changed(self):
         idx = self.combo_engine.currentIndex()
         descs = [
             "Best quality. Requires an internet connection.",
-            "High-quality offline voice. Requires local model download.",
-            "Lightweight local voice. Works offline after voice download.",
+            "High-quality offline voice. Place Kokoro files manually in the models folder.",
+            "Lightweight local voice. Place Piper files manually in the models folder.",
             "Windows fallback voice. Works offline but may sound robotic."
         ]
         self.lbl_engine_desc.setText(descs[idx])
         self._populate_voices()
+        self._update_manual_model_hint()
 
     def _populate_voices(self):
         self.combo_voice.clear()
@@ -323,21 +398,51 @@ class MainWindow(QMainWindow):
         if eng_idx == 0: voices = EDGE_VOICES.get(lang, [])
         elif eng_idx == 1: voices = KOKORO_VOICES.get(lang, [])
         elif eng_idx == 2: voices = PIPER_VOICES.get(lang, [])
-        else: self.combo_voice.addItem("System Default Voice", "sapi"); return
+        else: self.combo_voice.addItem("System Default Voice", "System Default"); return
         
         for v in voices:
             label = v.display_name
             if eng_idx == 1 and not is_kokoro_installed(): 
-                label += " [Download Required]"
+                label += " [Missing local model]"
             elif eng_idx == 2 and not is_piper_voice_installed(v.id): 
-                label += " [Download Required]"
+                label += " [Missing local voice]"
             self.combo_voice.addItem(label, v.id)
+
+    def _update_manual_model_hint(self):
+        idx = self.combo_engine.currentIndex()
+        if idx == 1:
+            self.lbl_manual_models.setText(
+                f"Kokoro folder: {kokoro_model_dir()} "
+                "(requires kokoro-v1.0.onnx and voices-v1.0.bin)"
+            )
+        elif idx == 2:
+            self.lbl_manual_models.setText(
+                f"Piper folder: {piper_model_dir()} "
+                "(requires <voice>.onnx and <voice>.onnx.json)"
+            )
+        else:
+            self.lbl_manual_models.setText("")
 
     def _on_preview(self):
         v_id, eng_idx = self.combo_voice.currentData(), self.combo_engine.currentIndex()
         engine = ["edge", "kokoro", "piper", "sapi"][eng_idx]
-        if engine == "kokoro" and not is_kokoro_installed(): return
-        if engine == "piper" and not is_piper_voice_installed(v_id): return
+        if not v_id:
+            QMessageBox.warning(self, "Voice required", "Please select a voice first.")
+            return
+        if engine == "kokoro" and not is_kokoro_installed():
+            QMessageBox.warning(
+                self,
+                "Local model required",
+                f"Place kokoro-v1.0.onnx and voices-v1.0.bin in:\n{kokoro_model_dir()}",
+            )
+            return
+        if engine == "piper" and not is_piper_voice_installed(v_id):
+            QMessageBox.warning(
+                self,
+                "Local voice required",
+                f"Place {v_id}.onnx and {v_id}.onnx.json in:\n{piper_model_dir()}",
+            )
+            return
         self.btn_preview.setEnabled(False)
         self.btn_preview.setText("⌛ Generating...")
         self.preview_worker = AudioPreviewWorker(self.settings, v_id, engine, self.combo_lang.currentText())
@@ -351,11 +456,47 @@ class MainWindow(QMainWindow):
         else: QMessageBox.critical(self, "Error", f"Preview failed: {res}")
 
     def _on_generate(self):
-        self.settings.tts.engine = ["edge", "kokoro", "piper", "sapi"][self.combo_engine.currentIndex()]
-        self.settings.tts.voice = self.combo_voice.currentData()
+        if not self._pdf_path:
+            QMessageBox.warning(self, "PDF required", "Please choose a PDF document first.")
+            return
+        output_path = self.edit_output.text().strip()
+        if not output_path:
+            QMessageBox.warning(self, "Output required", "Please choose where to save the MP3 file.")
+            return
+        if Path(output_path).suffix.lower() != ".mp3":
+            output_path = str(Path(output_path).with_suffix(".mp3"))
+            self.edit_output.setText(output_path)
+        output_dir = Path(output_path).parent
+        if not output_dir.exists():
+            QMessageBox.warning(self, "Invalid output", f"The output folder does not exist:\n{output_dir}")
+            return
+
+        engine = ["edge", "kokoro", "piper", "sapi"][self.combo_engine.currentIndex()]
+        voice_id = self.combo_voice.currentData()
+        if not voice_id:
+            QMessageBox.warning(self, "Voice required", "Please select a voice first.")
+            return
+        if engine == "kokoro" and not is_kokoro_installed():
+            QMessageBox.warning(
+                self,
+                "Local model required",
+                f"Place kokoro-v1.0.onnx and voices-v1.0.bin in:\n{kokoro_model_dir()}",
+            )
+            return
+        if engine == "piper" and not is_piper_voice_installed(voice_id):
+            QMessageBox.warning(
+                self,
+                "Local voice required",
+                f"Place {voice_id}.onnx and {voice_id}.onnx.json in:\n{piper_model_dir()}",
+            )
+            return
+
+        self.settings.tts.engine = engine
+        self.settings.tts.voice = voice_id
+        self.settings.audio.mp3_bitrate = self.combo_bitrate.currentText()
         self.btn_generate.setVisible(False); self.btn_cancel.setVisible(True)
         self.pipeline = AudioBookPipeline(self.settings)
-        self.worker = PipelineWorker(self.pipeline, self._pdf_path, self.edit_output.text())
+        self.worker = PipelineWorker(self.pipeline, self._pdf_path, output_path)
         self.worker.progress.connect(self._on_progress)
         self.worker.finished.connect(self._on_finished)
         self.worker.start()
@@ -372,7 +513,3 @@ class MainWindow(QMainWindow):
     def _on_cancel(self):
         if self.pipeline: self.pipeline.cancel()
         self.lbl_status.setText("Cancelling process...")
-
-    def _on_manage_voices(self):
-        from audiobook_gen.gui.voice_manager import VoiceManagerDialog
-        dlg = VoiceManagerDialog(self); dlg.voices_changed.connect(self._populate_voices); dlg.exec()

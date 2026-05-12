@@ -45,7 +45,7 @@ La interfaz de usuario ha sido diseñada en **PySide6 (Qt for Python)**, siguien
 - **Diseño Premium:** Uso de hojas de estilo (QSS) para una estética oscura, moderna y profesional.
 - **Asincronía Total:** El pipeline de IA corre en hilos separados (`QThread`), permitiendo que la interfaz permanezca reactiva mientras se procesan miles de palabras.
 - **Feedback en Tiempo Real:** Barra de progreso ponderada que refleja con precisión cada fase (extracción, normalización, síntesis, ensamblado).
-- **Gestión de Recursos:** Diálogos integrados para la descarga y gestión de modelos de voz offline, facilitando la experiencia del usuario no técnico.
+- **Modelos offline manuales:** Kokoro y Piper se detectan desde carpetas locales documentadas. El usuario instala los modelos manualmente; la app no descarga ni elimina voces.
 
 ---
 
@@ -55,7 +55,7 @@ La interfaz de usuario ha sido diseñada en **PySide6 (Qt for Python)**, siguien
 | :--- | :--- |
 | **Prosodia Avanzada** | Inserción automática de silencios variables entre párrafos (200ms) y capítulos (1800ms) para un ritmo narrativo natural. |
 | **Detección de Estructura** | Identificación automática de capítulos basada en patrones regex inteligentes para organizar el flujo narrativo. |
-| **Ensamblado con FFmpeg** | Uso de `FFmpeg` con *stream copy* para concatenar fragmentos de audio sin pérdida de calidad y con mínima carga de CPU. |
+| **Ensamblado robusto** | Acepta fragmentos MP3/WAV mixtos, inserta pausas y reexporta un MP3 final homogéneo. |
 | **Multi-idioma** | Soporte para más de 12 idiomas con catálogos de voces específicos por región y género. |
 | **Portabilidad** | Preparado para ser empaquetado como un ejecutable `.exe` independiente mediante `PyInstaller`. |
 

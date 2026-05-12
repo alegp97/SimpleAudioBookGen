@@ -160,7 +160,7 @@ def main() -> None:
         app.setWindowIcon(QIcon(str(icon_file)))
 
     # Create and show the main window
-    window = MainWindow()
+    window = MainWindow(settings)
     window.show()
 
     sys.exit(app.exec())

@@ -8,8 +8,6 @@ normaliza volumen y exporta a MP3.
 from __future__ import annotations
 
 import os
-import subprocess
-from pathlib import Path
 from typing import Optional
 
 from pydub import AudioSegment
@@ -34,82 +32,51 @@ class AudioAssembler:
         output_path: str,
     ) -> str:
         """
-        Ensambla los fragmentos de audio en un MP3 final usando FFmpeg stream copy.
+        Ensambla fragmentos MP3/WAV mixtos y exporta un MP3 final.
+
+        Reencodear al final es mas robusto que concatenar con stream copy:
+        Edge puede generar MP3, mientras que motores locales suelen producir WAV.
         """
         if not audio_paths:
             raise ValueError("No hay fragmentos de audio para ensamblar")
 
-        log.info("Ensamblando %d fragmentos de audio con FFmpeg...", len(audio_paths))
+        log.info("Ensamblando %d fragmentos de audio...", len(audio_paths))
+        combined = AudioSegment.empty()
 
-        temp_dir = os.path.dirname(audio_paths[0])
-        silence_para_path = os.path.join(temp_dir, "silence_para.mp3")
-        silence_chap_path = os.path.join(temp_dir, "silence_chap.mp3")
+        for i, (audio_path, chunk) in enumerate(zip(audio_paths, chunks)):
+            try:
+                combined += AudioSegment.from_file(audio_path)
+            except Exception as e:
+                raise RuntimeError(f"No se pudo leer el fragmento {audio_path}: {e}") from e
 
-        # 1. Ensure silence files exist
-        if not os.path.exists(silence_para_path):
-            AudioSegment.silent(duration=self.config.silence_paragraph_ms).export(
-                silence_para_path, format="mp3", bitrate=self.config.mp3_bitrate
-            )
-        if not os.path.exists(silence_chap_path):
-            AudioSegment.silent(duration=self.config.silence_chapter_ms).export(
-                silence_chap_path, format="mp3", bitrate=self.config.mp3_bitrate
-            )
+            if i < len(audio_paths) - 1:
+                if chunk.is_chapter_end:
+                    combined += AudioSegment.silent(duration=self.config.silence_chapter_ms)
+                    log.debug("Pausa de capitulo insertada tras chunk %d", chunk.index)
+                elif self._chunk_ends_sentence(chunk.text):
+                    combined += AudioSegment.silent(duration=self.config.silence_paragraph_ms)
 
-        # 2. Build the concat list
-        concat_txt_path = os.path.join(temp_dir, "concat.txt")
-        
-        def _escape_path(p: str) -> str:
-            # FFmpeg concat requires escaping single quotes
-            return p.replace("'", "'\\''")
-
-        with open(concat_txt_path, "w", encoding="utf-8") as f:
-            for i, (audio_path, chunk) in enumerate(zip(audio_paths, chunks)):
-                f.write(f"file '{_escape_path(audio_path)}'\n")
-
-                if i < len(audio_paths) - 1:
-                    if chunk.is_chapter_end:
-                        f.write(f"file '{_escape_path(silence_chap_path)}'\n")
-                        log.debug("Pausa de capítulo insertada tras chunk %d", chunk.index)
-                    elif self._chunk_ends_sentence(chunk.text):
-                        f.write(f"file '{_escape_path(silence_para_path)}'\n")
-
-        # 3. Run FFmpeg concat demuxer with stream copy
-        ffmpeg_exe = getattr(AudioSegment, "converter", "ffmpeg")
-        cmd = [
-            str(ffmpeg_exe),
-            "-y",  # Overwrite output
-            "-f", "concat",
-            "-safe", "0",
-            "-i", concat_txt_path,
-            "-c", "copy",
-            output_path
-        ]
+        combined = self._normalize_volume(combined)
 
         try:
-            log.info("Ejecutando FFmpeg stream copy...")
-            kwargs = {"check": True, "capture_output": True, "text": True}
-            if os.name == 'nt':
-                kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
-            result = subprocess.run(cmd, **kwargs)
-            log.debug("FFmpeg output: %s", result.stderr)
-        except subprocess.CalledProcessError as e:
-            log.error("Error crítico ensamblando audio con FFmpeg: %s", e.stderr)
-            raise RuntimeError(f"Fallo al ensamblar audio: {e.stderr}") from e
+            combined.export(output_path, format="mp3", bitrate=self.config.mp3_bitrate)
+        except Exception as e:
+            raise RuntimeError(f"Fallo al exportar MP3 final: {e}") from e
 
-        # 4. Final metadata logging
         duration_secs = 0.0
         file_size_mb = 0.0
         if os.path.exists(output_path):
             file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
             try:
                 from pydub.utils import mediainfo
+
                 info = mediainfo(output_path)
                 duration_secs = float(info.get("duration", 0))
             except Exception:
                 pass
 
         log.info(
-            "MP3 exportado: %s — Duración: %.1f min, Tamaño: %.1f MB",
+            "MP3 exportado: %s - Duracion: %.1f min, Tamano: %.1f MB",
             output_path,
             duration_secs / 60,
             file_size_mb,
@@ -117,38 +84,35 @@ class AudioAssembler:
 
         return output_path
 
+    def _normalize_volume(self, audio: AudioSegment) -> AudioSegment:
+        """Normaliza volumen al objetivo configurado si hay nivel medible."""
+        if audio.dBFS == float("-inf"):
+            return audio
+        return audio.apply_gain(self.config.normalize_target_dbfs - audio.dBFS)
+
     @staticmethod
     def _chunk_ends_sentence(text: str) -> bool:
-        """
-        Determina si un chunk termina en puntuación fuerte (punto, cierre de
-        exclamación/interrogación, puntos suspensivos, comillas de cierre
-        tras punto).
-
-        Si el chunk NO termina en puntuación fuerte significa que su texto
-        continúa en el siguiente chunk y NO debe insertarse silencio.
-        """
+        """Determina si corresponde insertar pausa tras el chunk."""
         stripped = text.rstrip()
         if not stripped:
-            return True  # chunk vacío → conservador: sí pausa
-        # Último carácter significativo
-        last = stripped[-1]
-        return last in '.!?…"\u2019\u201d»)'
+            return True
+        return stripped[-1] in '.!?\u2026"\u2019\u201d\u00bb)'
 
-    def cleanup_temp_files(self, audio_paths: list[str]) -> None:
-        """Elimina archivos temporales de audio y la lista concat."""
+    def cleanup_temp_files(self, audio_paths: list[str | None]) -> None:
+        """Elimina archivos temporales de audio y la lista concat heredada."""
         for path in audio_paths:
             try:
-                if os.path.exists(path):
+                if path and os.path.exists(path):
                     os.remove(path)
             except OSError as e:
                 log.warning("No se pudo eliminar %s: %s", path, e)
-                
-        # Remove concat.txt if it exists
+
         if audio_paths:
-            temp_dir = os.path.dirname(audio_paths[0])
-            concat_path = os.path.join(temp_dir, "concat.txt")
-            if os.path.exists(concat_path):
-                try:
-                    os.remove(concat_path)
-                except OSError:
-                    pass
+            first = next((path for path in audio_paths if path), None)
+            if first:
+                concat_path = os.path.join(os.path.dirname(first), "concat.txt")
+                if os.path.exists(concat_path):
+                    try:
+                        os.remove(concat_path)
+                    except OSError:
+                        pass

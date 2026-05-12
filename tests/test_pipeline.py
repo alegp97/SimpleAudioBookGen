@@ -29,6 +29,8 @@ def test_pipeline_run_success():
     
     mock_tts = MagicMock()
     mock_tts.get_voice_name.return_value = "Voz"
+    mock_tts.preferred_extension.return_value = ".mp3"
+    mock_tts.synthesize.side_effect = lambda chunk, output_path: output_path
     
     mock_assembler = MagicMock()
     
@@ -60,7 +62,7 @@ def test_pipeline_cancellation():
         with patch("audiobook_gen.pipeline.PDFExtractor", return_value=mock_extractor):
             result = pipeline.run("input.pdf", "output.mp3")
             assert result.success is False
-            assert "Cancelado" in result.error
+            assert "Cancelled" in result.error
 
 def test_pipeline_error_handling():
     pipeline = AudioBookPipeline()

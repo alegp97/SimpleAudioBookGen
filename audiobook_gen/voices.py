@@ -1,12 +1,8 @@
-"""
-Voice catalogue and management.
-"""
+"""Voice catalogue and local model paths."""
 
 import os
-import json
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Optional
 
 @dataclass
 class VoiceEntry:
@@ -16,7 +12,6 @@ class VoiceEntry:
     locale: str
     gender: str
     engine: str  # 'edge', 'kokoro', 'piper', 'sapi'
-    model_url: Optional[str] = None  # For Piper/Kokoro downloads
 
 # Language display names for the combo box
 LANGUAGE_ORDER = [
@@ -68,22 +63,14 @@ KOKORO_VOICES = {
     ]
 }
 
-KOKORO_MODEL_INFO = {
-    "url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx",
-    "voices_url": "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin"
-}
-
 # Piper Voices
 PIPER_VOICES = {
     "English": [
-        VoiceEntry("en_US-libritts-high", "LibriTTS (High Quality)", "English", "en-US", "Male", "piper",
-                   "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/libritts/high/en_US-libritts-high.onnx"),
-        VoiceEntry("en_GB-southern_english_female-low", "Southern (Female, Low)", "English", "en-GB", "Female", "piper",
-                   "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_GB/southern_english_female/low/en_GB-southern_english_female-low.onnx"),
+        VoiceEntry("en_US-libritts-high", "LibriTTS (High Quality)", "English", "en-US", "Male", "piper"),
+        VoiceEntry("en_GB-southern_english_female-low", "Southern (Female, Low)", "English", "en-GB", "Female", "piper"),
     ],
     "Spanish": [
-        VoiceEntry("es_ES-carlfm-medium", "Carl (Male, Spain)", "Spanish", "es-ES", "Male", "piper",
-                   "https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_ES/carlfm/medium/es_ES-carlfm-medium.onnx"),
+        VoiceEntry("es_ES-carlfm-medium", "Carl (Male, Spain)", "Spanish", "es-ES", "Male", "piper"),
     ]
 }
 

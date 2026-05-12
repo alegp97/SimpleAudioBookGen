@@ -23,7 +23,7 @@ from audiobook_gen.core.pdf_extractor import PDFExtractor, ExtractionResult
 from audiobook_gen.core.text_cleaner import TextCleaner, CleanedText
 from audiobook_gen.core.text_normalizer import TextNormalizer
 from audiobook_gen.core.text_segmenter import TextSegmenter, TextChunk
-from audiobook_gen.core.tts_engine import create_tts_engine, TTSEngine
+from audiobook_gen.core.tts_engine import create_tts_engine
 from audiobook_gen.utils.logger import get_logger
 
 log = get_logger("pipeline")
@@ -127,7 +127,7 @@ class AudioBookPipeline:
         """
         self._cancelled = False
         start_time = time.time()
-        temp_audio_files: list[str] = []
+        temp_audio_files: list[str | None] = []
 
         try:
             # ── Phase 1: Load & validate ──
@@ -166,6 +166,8 @@ class AudioBookPipeline:
             segmenter = TextSegmenter(self.settings.segmenter)
             chunks = segmenter.segment(normalized_text)
             log.info("Text segmented into %d chunks", len(chunks))
+            if not chunks:
+                raise RuntimeError("No narratable text was found after cleaning and segmentation.")
             self._check_cancelled()
 
             # ── Phase 6: Voice synthesis ──
@@ -183,15 +185,16 @@ class AudioBookPipeline:
 
             def _process_chunk(idx: int, chnk: TextChunk) -> str:
                 self._check_cancelled()
+                extension = tts_engine.preferred_extension()
                 chunk_file = os.path.join(
                     self.settings.temp_dir,
-                    f"chunk_{idx:05d}.mp3",
+                    f"chunk_{idx:05d}{extension}",
                 )
                 return tts_engine.synthesize(chnk, chunk_file)
 
             # Edge-TTS is online and can be heavily parallelized.
             # SAPI5 is a local COM object and usually doesn't like multi-threading.
-            max_workers = 10 if self.settings.tts.engine == "edge" else 1
+            max_workers = 4 if self.settings.tts.engine == "edge" else 1
             log.info(f"Synthesizing {len(chunks)} chunks using {max_workers} threads...")
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -234,7 +237,7 @@ class AudioBookPipeline:
             base_progress = 0.90
             self._emit_progress(PipelineState.ASSEMBLING, base_progress)
             assembler = AudioAssembler(self.settings.audio)
-            assembler.assemble(temp_audio_files, chunks, output_path)
+            assembler.assemble([path for path in temp_audio_files if path], chunks, output_path)
             self._check_cancelled()
 
             # ── Completado ──
