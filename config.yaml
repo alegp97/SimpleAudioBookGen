@@ -1,0 +1,25 @@
+audio:
+  mp3_bitrate: 320k
+  normalize_target_dbfs: -20.0
+  sample_rate: 24000
+  save_intermediate_wav: false
+  silence_chapter_ms: 1800
+  silence_paragraph_ms: 200
+cleaner:
+  header_footer_threshold: 0.5
+  min_line_length: 3
+  remove_page_numbers: true
+debug: false
+log_file: audiobook_gen.log
+segmenter:
+  max_chunk_chars: 500
+  min_chunk_chars: 50
+  respect_sentence_boundaries: true
+temp_dir: C:\Users\Usuario\AppData\Local\Temp\audiobook_gen
+tts:
+  engine: edge
+  language: Spanish
+  pitch: +0Hz
+  rate: +0%
+  voice: es-ES-AlvaroNeural
+  volume: +0%

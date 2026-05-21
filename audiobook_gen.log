@@ -1325,3 +1325,48 @@ RuntimeError: Fallo al procesar fragmento de audio C:\Users\EM2024~1\AppData\Loc
 2026-04-24 13:25:11 | INFO     | audiobook_gen.audio_assembler | Ejecutando FFmpeg stream copy...
 2026-04-24 13:25:24 | INFO     | audiobook_gen.audio_assembler | MP3 exportado: C:\Users\EM2024~1\AppData\Local\Temp\audiobook_gen\LIBRO_CarnegieDale_ Cómo ganar amigos e influir en las personas_audiobook.mp3 — Duración: 498.7 min, Tamaño: 172.9 MB
 2026-04-24 13:25:24 | INFO     | audiobook_gen.pipeline | Pipeline completed in 273.2 sec — 1139 chunks, 466740 chars, 0 chapters
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pdf_extractor | Abriendo PDF: carta_porro.pdf
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pdf_extractor | PDF abierto — Páginas: 1, Título: (sin título), Autor: Alejandro Garcia Perez
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pdf_extractor | Extracción completada — 1 páginas, 1584 caracteres totales
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pipeline | Extracted 1 pages
+2026-05-13 17:30:55 | INFO     | audiobook_gen.text_cleaner | Iniciando limpieza de 1 páginas
+2026-05-13 17:30:55 | INFO     | audiobook_gen.text_cleaner | Limpieza completada — 0 capítulos detectados, 1579 caracteres
+2026-05-13 17:30:55 | INFO     | audiobook_gen.text_normalizer | Reglas cargadas — 30 abreviaturas, 20 símbolos, 16 siglas, 9 patrones
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pipeline | Normalised text: 1551 characters
+2026-05-13 17:30:55 | INFO     | audiobook_gen.text_segmenter | Segmentación completada — 5 chunks, promedio 309 chars
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pipeline | Text segmented into 5 chunks
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pipeline | TTS engine: ar-AE-HamdanNeural
+2026-05-13 17:30:55 | INFO     | audiobook_gen.pipeline | Synthesizing 5 chunks using 4 threads...
+2026-05-13 17:31:03 | INFO     | audiobook_gen.audio_assembler | Ensamblando 5 fragmentos de audio...
+2026-05-13 17:31:04 | INFO     | audiobook_gen.audio_assembler | MP3 exportado: C:\Users\Usuario\Downloads\carta_porro.mp3 - Duracion: 2.2 min, Tamano: 2.5 MB
+2026-05-13 17:31:04 | INFO     | audiobook_gen.pipeline | Pipeline completed in 9.6 sec — 5 chunks, 1551 chars, 0 chapters
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pdf_extractor | Abriendo PDF: carta_porro.pdf
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pdf_extractor | PDF abierto — Páginas: 1, Título: (sin título), Autor: Alejandro Garcia Perez
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pdf_extractor | Extracción completada — 1 páginas, 1584 caracteres totales
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pipeline | Extracted 1 pages
+2026-05-13 17:31:51 | INFO     | audiobook_gen.text_cleaner | Iniciando limpieza de 1 páginas
+2026-05-13 17:31:51 | INFO     | audiobook_gen.text_cleaner | Limpieza completada — 0 capítulos detectados, 1579 caracteres
+2026-05-13 17:31:51 | INFO     | audiobook_gen.text_normalizer | Reglas cargadas — 30 abreviaturas, 20 símbolos, 16 siglas, 9 patrones
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pipeline | Normalised text: 1551 characters
+2026-05-13 17:31:51 | INFO     | audiobook_gen.text_segmenter | Segmentación completada — 5 chunks, promedio 309 chars
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pipeline | Text segmented into 5 chunks
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pipeline | TTS engine: pt-PT-DuarteNeural
+2026-05-13 17:31:51 | INFO     | audiobook_gen.pipeline | Synthesizing 5 chunks using 4 threads...
+2026-05-13 17:31:56 | INFO     | audiobook_gen.audio_assembler | Ensamblando 5 fragmentos de audio...
+2026-05-13 17:31:56 | INFO     | audiobook_gen.audio_assembler | MP3 exportado: C:\Users\Usuario\Downloads\carta_porro.mp3 - Duracion: 1.5 min, Tamano: 1.7 MB
+2026-05-13 17:31:56 | INFO     | audiobook_gen.pipeline | Pipeline completed in 5.4 sec — 5 chunks, 1551 chars, 0 chapters
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pdf_extractor | Abriendo PDF: carta_porro.pdf
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pdf_extractor | PDF abierto — Páginas: 1, Título: (sin título), Autor: Alejandro Garcia Perez
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pdf_extractor | Extracción completada — 1 páginas, 1584 caracteres totales
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pipeline | Extracted 1 pages
+2026-05-13 17:33:29 | INFO     | audiobook_gen.text_cleaner | Iniciando limpieza de 1 páginas
+2026-05-13 17:33:29 | INFO     | audiobook_gen.text_cleaner | Limpieza completada — 0 capítulos detectados, 1579 caracteres
+2026-05-13 17:33:29 | INFO     | audiobook_gen.text_normalizer | Reglas cargadas — 30 abreviaturas, 20 símbolos, 16 siglas, 9 patrones
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pipeline | Normalised text: 1551 characters
+2026-05-13 17:33:29 | INFO     | audiobook_gen.text_segmenter | Segmentación completada — 5 chunks, promedio 309 chars
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pipeline | Text segmented into 5 chunks
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pipeline | TTS engine: es-ES-AlvaroNeural
+2026-05-13 17:33:29 | INFO     | audiobook_gen.pipeline | Synthesizing 5 chunks using 4 threads...
+2026-05-13 17:33:33 | INFO     | audiobook_gen.audio_assembler | Ensamblando 5 fragmentos de audio...
+2026-05-13 17:33:33 | INFO     | audiobook_gen.audio_assembler | MP3 exportado: C:\Users\Usuario\Downloads\carta_porro.mp3 - Duracion: 1.5 min, Tamano: 1.8 MB
+2026-05-13 17:33:33 | INFO     | audiobook_gen.pipeline | Pipeline completed in 4.5 sec — 5 chunks, 1551 chars, 0 chapters

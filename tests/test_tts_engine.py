@@ -84,6 +84,29 @@ def test_edge_tts_empty_text_generates_silence():
     mock_audio.export.assert_called_with("silence.mp3", format="mp3")
 
 
+def test_edge_tts_no_audio_error_is_explained():
+    from edge_tts.exceptions import NoAudioReceived
+
+    config = TTSConfig(voice="eu-ES-AinhoaNeural")
+    engine = EdgeTTSEngine(config, "eu-ES-AinhoaNeural")
+    chunk = TextChunk(text="Kaixo mundua", index=0)
+
+    mock_communicate = MagicMock()
+    mock_communicate.save = AsyncMock(side_effect=NoAudioReceived("No audio was received."))
+
+    def run_coro(coro):
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(coro)
+        finally:
+            loop.close()
+
+    with patch("edge_tts.Communicate", return_value=mock_communicate):
+        with patch("asyncio.run", side_effect=run_coro):
+            with pytest.raises(RuntimeError, match="No audio was received from Edge TTS"):
+                engine.synthesize(chunk, "preview.mp3")
+
+
 def test_kokoro_missing_model_error_is_actionable():
     config = TTSConfig(engine="kokoro", voice="es_alex")
 

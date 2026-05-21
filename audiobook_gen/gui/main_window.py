@@ -144,15 +144,20 @@ class AudioPreviewWorker(QThread):
             self.finished.emit(False, str(e))
 
 class MainWindow(QMainWindow):
-    def __init__(self, settings: Optional[Settings] = None) -> None:
+    ENGINE_IDS = ["edge", "kokoro", "piper", "sapi"]
+
+    def __init__(self, settings: Optional[Settings] = None, config_path: Optional[str | Path] = None) -> None:
         super().__init__()
         self.settings = settings or Settings()
+        self.config_path = Path(config_path) if config_path else Path(__file__).resolve().parents[2] / "config.yaml"
+        self._restoring_preferences = False
         self.player = QMediaPlayer()
         self.audio_output = QAudioOutput()
         self.player.setAudioOutput(self.audio_output)
         self.setAcceptDrops(True)
         self._pdf_path = None
         self._init_ui()
+        self._restore_tts_preferences()
         self._connect_signals()
 
     def _init_ui(self) -> None:
@@ -209,7 +214,7 @@ class MainWindow(QMainWindow):
         output_layout.addWidget(self.edit_output, 0, 1)
         output_layout.addWidget(self.btn_browse_output, 0, 2)
         
-        output_layout.addWidget(QLabel("Audio quality:"), 1, 0)
+        output_layout.addWidget(QLabel("Audio quality (kbps):"), 1, 0)
         self.combo_bitrate = QComboBox()
         self.combo_bitrate.addItems(["64k", "128k", "192k", "256k", "320k"])
         self.combo_bitrate.setCurrentText(self.settings.audio.mp3_bitrate)
@@ -323,13 +328,73 @@ class MainWindow(QMainWindow):
     def _connect_signals(self) -> None:
         self.btn_select_pdf.clicked.connect(self._on_select_pdf)
         self.btn_browse_output.clicked.connect(self._on_browse_output)
-        self.combo_lang.currentIndexChanged.connect(self._populate_voices)
+        self.combo_lang.currentIndexChanged.connect(self._on_language_changed)
         self.combo_engine.currentIndexChanged.connect(self._on_engine_changed)
+        self.combo_voice.currentIndexChanged.connect(self._save_preferences)
+        self.combo_bitrate.currentIndexChanged.connect(self._save_preferences)
         self.btn_preview.clicked.connect(self._on_preview)
         self.btn_generate.clicked.connect(self._on_generate)
         self.btn_cancel.clicked.connect(self._on_cancel)
+
+    def _restore_tts_preferences(self) -> None:
+        self._restoring_preferences = True
+        try:
+            engine_idx = self._engine_index(self.settings.tts.engine)
+            self.combo_engine.setCurrentIndex(engine_idx)
+
+            language = self.settings.tts.language
+            inferred_language = self._language_for_voice(self.settings.tts.voice, engine_idx)
+            if language not in LANGUAGE_ORDER or (inferred_language and inferred_language != language):
+                language = inferred_language or "Spanish"
+            self._set_combo_text(self.combo_lang, language)
+
+            self._on_engine_changed()
+            self._set_combo_data(self.combo_voice, self.settings.tts.voice)
+        finally:
+            self._restoring_preferences = False
+
+    def _engine_index(self, engine: str) -> int:
+        try:
+            return self.ENGINE_IDS.index(engine)
+        except ValueError:
+            return 0
+
+    def _language_for_voice(self, voice_id: str, engine_idx: int) -> Optional[str]:
+        voice_groups = [EDGE_VOICES, KOKORO_VOICES, PIPER_VOICES, {}]
+        for language, voices in voice_groups[engine_idx].items():
+            if any(v.id == voice_id for v in voices):
+                return language
+        return None
+
+    def _set_combo_text(self, combo: QComboBox, text: str) -> None:
+        idx = combo.findText(text)
+        if idx >= 0:
+            combo.setCurrentIndex(idx)
+
+    def _set_combo_data(self, combo: QComboBox, value: str) -> None:
+        idx = combo.findData(value)
+        if idx >= 0:
+            combo.setCurrentIndex(idx)
+
+    def _on_language_changed(self) -> None:
         self._populate_voices()
-        self._on_engine_changed()
+        self._save_preferences()
+
+    def _save_preferences(self) -> None:
+        if self._restoring_preferences:
+            return
+
+        self.settings.tts.engine = self.ENGINE_IDS[self.combo_engine.currentIndex()]
+        self.settings.tts.language = self.combo_lang.currentText()
+        voice_id = self.combo_voice.currentData()
+        if voice_id:
+            self.settings.tts.voice = voice_id
+        self.settings.audio.mp3_bitrate = self.combo_bitrate.currentText()
+
+        try:
+            self.settings.save_yaml(self.config_path)
+        except Exception:
+            log.exception("Could not save user preferences to %s", self.config_path)
 
     def dragEnterEvent(self, e):
         if e.mimeData().hasUrls(): e.acceptProposedAction()
@@ -391,6 +456,7 @@ class MainWindow(QMainWindow):
         self.lbl_engine_desc.setText(descs[idx])
         self._populate_voices()
         self._update_manual_model_hint()
+        self._save_preferences()
 
     def _populate_voices(self):
         self.combo_voice.clear()
@@ -407,6 +473,23 @@ class MainWindow(QMainWindow):
             elif eng_idx == 2 and not is_piper_voice_installed(v.id): 
                 label += " [Missing local voice]"
             self.combo_voice.addItem(label, v.id)
+
+    def _validate_voice_available(self, engine: str, voice_id: str) -> bool:
+        if engine == "kokoro" and not is_kokoro_installed():
+            QMessageBox.warning(
+                self,
+                "Local model required",
+                f"Place kokoro-v1.0.onnx and voices-v1.0.bin in:\n{kokoro_model_dir()}",
+            )
+            return False
+        if engine == "piper" and not is_piper_voice_installed(voice_id):
+            QMessageBox.warning(
+                self,
+                "Local voice required",
+                f"Place {voice_id}.onnx and {voice_id}.onnx.json in:\n{piper_model_dir()}",
+            )
+            return False
+        return True
 
     def _update_manual_model_hint(self):
         idx = self.combo_engine.currentIndex()
@@ -425,23 +508,11 @@ class MainWindow(QMainWindow):
 
     def _on_preview(self):
         v_id, eng_idx = self.combo_voice.currentData(), self.combo_engine.currentIndex()
-        engine = ["edge", "kokoro", "piper", "sapi"][eng_idx]
+        engine = self.ENGINE_IDS[eng_idx]
         if not v_id:
             QMessageBox.warning(self, "Voice required", "Please select a voice first.")
             return
-        if engine == "kokoro" and not is_kokoro_installed():
-            QMessageBox.warning(
-                self,
-                "Local model required",
-                f"Place kokoro-v1.0.onnx and voices-v1.0.bin in:\n{kokoro_model_dir()}",
-            )
-            return
-        if engine == "piper" and not is_piper_voice_installed(v_id):
-            QMessageBox.warning(
-                self,
-                "Local voice required",
-                f"Place {v_id}.onnx and {v_id}.onnx.json in:\n{piper_model_dir()}",
-            )
+        if not self._validate_voice_available(engine, v_id):
             return
         self.btn_preview.setEnabled(False)
         self.btn_preview.setText("⌛ Generating...")
@@ -471,29 +542,19 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Invalid output", f"The output folder does not exist:\n{output_dir}")
             return
 
-        engine = ["edge", "kokoro", "piper", "sapi"][self.combo_engine.currentIndex()]
+        engine = self.ENGINE_IDS[self.combo_engine.currentIndex()]
         voice_id = self.combo_voice.currentData()
         if not voice_id:
             QMessageBox.warning(self, "Voice required", "Please select a voice first.")
             return
-        if engine == "kokoro" and not is_kokoro_installed():
-            QMessageBox.warning(
-                self,
-                "Local model required",
-                f"Place kokoro-v1.0.onnx and voices-v1.0.bin in:\n{kokoro_model_dir()}",
-            )
-            return
-        if engine == "piper" and not is_piper_voice_installed(voice_id):
-            QMessageBox.warning(
-                self,
-                "Local voice required",
-                f"Place {voice_id}.onnx and {voice_id}.onnx.json in:\n{piper_model_dir()}",
-            )
+        if not self._validate_voice_available(engine, voice_id):
             return
 
         self.settings.tts.engine = engine
+        self.settings.tts.language = self.combo_lang.currentText()
         self.settings.tts.voice = voice_id
         self.settings.audio.mp3_bitrate = self.combo_bitrate.currentText()
+        self._save_preferences()
         self.btn_generate.setVisible(False); self.btn_cancel.setVisible(True)
         self.pipeline = AudioBookPipeline(self.settings)
         self.worker = PipelineWorker(self.pipeline, self._pdf_path, output_path)

@@ -53,6 +53,8 @@ class EdgeTTSEngine(TTSEngine):
             return self._synthesize_empty(output_path)
 
         import edge_tts
+        from edge_tts.exceptions import NoAudioReceived
+
         async def _run():
             communicate = edge_tts.Communicate(
                 chunk.text,
@@ -62,7 +64,13 @@ class EdgeTTSEngine(TTSEngine):
                 volume=self.config.volume,
             )
             await communicate.save(output_path)
-        asyncio.run(_run())
+        try:
+            asyncio.run(_run())
+        except NoAudioReceived as exc:
+            raise RuntimeError(
+                "No audio was received from Microsoft Edge TTS. This usually means the "
+                f"selected voice ({self.voice_id}) is listed in the repository but it is not currently available for synthesis. Try selecting a different voice."
+            ) from exc
         return output_path
 
 class KokoroEngine(TTSEngine):

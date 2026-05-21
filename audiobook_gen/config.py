@@ -20,6 +20,7 @@ class TTSConfig:
     """Configuración del motor de síntesis de voz."""
 
     engine: str = "edge"  # "edge" | "sapi"
+    language: str = "Spanish"
     voice: str = "es-ES-AlvaroNeural"
     rate: str = "+0%"      # p.ej. "+10%", "-5%"
     pitch: str = "+0Hz"    # p.ej. "+5Hz", "-2Hz"
@@ -115,6 +116,7 @@ class Settings:
         data = {
             "tts": {
                 "engine": self.tts.engine,
+                "language": self.tts.language,
                 "voice": self.tts.voice,
                 "rate": self.tts.rate,
                 "pitch": self.tts.pitch,

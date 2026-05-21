@@ -122,12 +122,19 @@ from audiobook_gen.utils.logger import setup_logger
 from audiobook_gen.config import Settings
 
 
+def config_path() -> Path:
+    """Return the writable user configuration path."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent / "config.yaml"
+    return Path(__file__).parent.parent / "config.yaml"
+
+
 def main() -> None:
     """Main entry point."""
     # Load configuration
-    config_path = Path(__file__).parent.parent / "config.yaml"
-    if config_path.exists():
-        settings = Settings.from_yaml(config_path)
+    cfg_path = config_path()
+    if cfg_path.exists():
+        settings = Settings.from_yaml(cfg_path)
     else:
         settings = Settings()
 
@@ -160,7 +167,7 @@ def main() -> None:
         app.setWindowIcon(QIcon(str(icon_file)))
 
     # Create and show the main window
-    window = MainWindow(settings)
+    window = MainWindow(settings, cfg_path)
     window.show()
 
     sys.exit(app.exec())
