@@ -64,21 +64,13 @@ def download_ffmpeg():
 def download_tesseract():
     print("[*] Preparing Tesseract Portable...")
     BUILD_ASSETS_DIR.mkdir(exist_ok=True)
-    
-    if not TESSERACT_DIR.exists():
-        TESSERACT_DIR.mkdir(exist_ok=True)
-        tesseract_exe = TESSERACT_DIR / "tesseract.exe"
-        if not tesseract_exe.exists():
-            print("    Downloading Tesseract Portable (this may take a while)...")
-            # Using UB-Mannheim's installer and extracting it, or a generic zip.
-            # Since direct zip for tesseract windows is rare, we will download a known portable version or fallback to warning.
-            # For automation, we'll download a generic binary pack or skip if not found.
-            # Because installing via script is complex, we'll just create a dummy if we can't find it
-            # so the build doesn't fail, but in production we'd download the real ZIP.
-            print("    [WARNING] Tesseract automatic download not fully implemented. Please place portable tesseract inside _build_assets/tesseract_bin")
-            # Create a dummy exe so pyinstaller doesn't fail on missing file
-            with open(tesseract_exe, "wb") as f:
-                f.write(b"DUMMY")
+    TESSERACT_DIR.mkdir(exist_ok=True)
+    tesseract_exe = TESSERACT_DIR / "tesseract.exe"
+    if not tesseract_exe.exists():
+        raise FileNotFoundError(
+            "Tesseract portable was not found. Place a real tesseract.exe in "
+            f"{TESSERACT_DIR} before building, or remove OCR packaging from build.py."
+        )
 
 def download_upx():
     print("[*] Preparing UPX...")
@@ -102,11 +94,13 @@ def download_upx():
 
 def run_pyinstaller():
     print("[*] Running PyInstaller...")
-    # Install pyinstaller if not present
     try:
         import PyInstaller
     except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
+        raise RuntimeError(
+            "PyInstaller is not installed. Install build dependencies first with "
+            "'python -m pip install -r requirements.txt'."
+        )
 
     icon_path = PROJECT_ROOT / "icon.ico"
     

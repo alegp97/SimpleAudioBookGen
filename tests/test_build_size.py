@@ -3,6 +3,13 @@ import sys
 import shutil
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    os.environ.get("RUN_DOWNLOAD_TESTS") != "1",
+    reason="Download/build tests are excluded from the stable unit suite.",
+)
+
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.absolute()
 sys.path.insert(0, str(PROJECT_ROOT))
