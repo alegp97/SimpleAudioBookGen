@@ -41,7 +41,7 @@ def test_clean_pipeline():
     config = CleanerConfig(header_footer_threshold=1.0, min_line_length=0)
     cleaner = TextCleaner(config)
     pages = [
-        PageContent(text="HEADER\nCAPÍTULO 1: INTRODUCCIÓN\nEste es el primer párrafo del libro que debe ser conservado.\nFOOTER", page_number=1),
+        PageContent(text="HEADER\nCAPÍTULO 1: INTRODUCCIÓN\n\nEste es el primer párrafo del libro que debe ser conservado.\nFOOTER", page_number=1),
         PageContent(text="HEADER\nEste es el segundo párrafo con más contenido para evitar filtros.\nFOOTER", page_number=2),
         PageContent(text="HEADER\nEste es el tercer párrafo que asegura que el texto es largo.\nFOOTER", page_number=3),
     ]

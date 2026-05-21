@@ -1,0 +1,63 @@
+# Build and distribution
+dist/
+build/
+bin/
+obj/
+out/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Executables & Packaging
+*.exe
+*.msi
+*.whl
+*.spec
+!SimpleAudioBookGen.spec
+SimpleAudioBookGen.spec.local
+
+# Build Assets
+.ffmpeg_bin/
+_build_assets/
+installers/
+
+# Application Logs & Temporary files
+*.log
+audiobook_gen.log
+concat.txt
+*.tmp
+temp_audio/
+
+# Generated Audio
+*.mp3
+*.wav
+!silence_para.mp3
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System
+Thumbs.db
+desktop.ini
