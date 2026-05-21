@@ -9,8 +9,6 @@ PyYAML>=6.0
 audioop-lts>=0.2
 imageio-ffmpeg>=0.5
 Pillow>=10.0
-pytest>=8.0
-PyInstaller>=6.0
 
 # Optional offline engines:
 # kokoro-onnx

@@ -68,7 +68,7 @@ class EdgeTTSEngine(TTSEngine):
             asyncio.run(_run())
         except NoAudioReceived as exc:
             raise RuntimeError(
-                "No audio was received from Microsoft Edge TTS. This usually means the "
+                "No audio was received from Edge TTS (Microsoft neural voices). This usually means the "
                 f"selected voice ({self.voice_id}) is listed in the repository but it is not currently available for synthesis. Try selecting a different voice."
             ) from exc
         return output_path

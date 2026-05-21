@@ -6,6 +6,8 @@ import zipfile
 import subprocess
 from pathlib import Path
 
+from audiobook_gen import __version__
+
 # Try importing PIL for icon generation
 try:
     from PIL import Image, ImageDraw, ImageFont
@@ -18,10 +20,16 @@ BUILD_ASSETS_DIR = PROJECT_ROOT / "_build_assets"
 FFMPEG_DIR = PROJECT_ROOT / ".ffmpeg_bin"
 TESSERACT_DIR = BUILD_ASSETS_DIR / "tesseract_bin"
 UPX_DIR = BUILD_ASSETS_DIR / "upx_bin"
+RULES_DIR = PROJECT_ROOT / "audiobook_gen" / "rules"
+USE_UPX = os.environ.get("AUDIOBOOKGEN_USE_UPX") == "1"
 
 def generate_icon():
-    print("[*] Generating temporary icon...")
     icon_path = PROJECT_ROOT / "icon.ico"
+    if icon_path.exists() and icon_path.stat().st_size > 0:
+        print("[*] Using existing release icon.")
+        return icon_path
+
+    print("[*] Generating fallback icon...")
     if HAS_PIL:
         img = Image.new('RGB', (256, 256), color=(73, 109, 137))
         d = ImageDraw.Draw(img)
@@ -99,7 +107,7 @@ def run_pyinstaller():
     except ImportError:
         raise RuntimeError(
             "PyInstaller is not installed. Install build dependencies first with "
-            "'python -m pip install -r requirements.txt'."
+            "'python -m pip install -r requirements-dev.txt'."
         )
 
     icon_path = PROJECT_ROOT / "icon.ico"
@@ -116,14 +124,14 @@ def run_pyinstaller():
         f"--add-data={FFMPEG_DIR};.ffmpeg_bin",
         # Add Tesseract
         f"--add-data={TESSERACT_DIR};tesseract_bin",
+        # Add editable normalization rules used at runtime
+        f"--add-data={RULES_DIR};audiobook_gen/rules",
         # Explicit hidden imports for dynamic loading libraries
         "--hidden-import", "pytesseract",
         "--hidden-import", "PIL",
         "--hidden-import", "pydub",
         "--hidden-import", "imageio_ffmpeg",
         "--hidden-import", "audiobook_gen",
-        # UPX config
-        f"--upx-dir={UPX_DIR}",
         # Excludes to reduce size
         "--exclude-module", "numpy",
         "--exclude-module", "pandas",
@@ -140,13 +148,19 @@ def run_pyinstaller():
         # Main script
         str(PROJECT_ROOT / "audiobook_gen" / "main.py")
     ]
+
+    if USE_UPX:
+        download_upx()
+        cmd.insert(-1, f"--upx-dir={UPX_DIR}")
+    else:
+        cmd.insert(-1, "--noupx")
     
     subprocess.check_call(cmd, cwd=PROJECT_ROOT)
 
 if __name__ == "__main__":
+    print(f"[*] Building SimpleAudioBookGen {__version__}")
     generate_icon()
     download_ffmpeg()
     download_tesseract()
-    download_upx()
     run_pyinstaller()
     print("[*] Build Complete. Check the 'dist' folder.")

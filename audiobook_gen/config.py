@@ -143,6 +143,7 @@ class Settings:
             "temp_dir": self.temp_dir,
             "log_file": self.log_file,
             "debug": self.debug,
+            "normalization_rules_path": self.normalization_rules_path,
         }
         with open(path, "w", encoding="utf-8") as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True)

@@ -2,10 +2,10 @@
 ; App Information
 AppName=SimpleAudioBookGen
 AppVersion=0.2.0
-AppPublisher=AudioBookGen Team
-AppPublisherURL=https://github.com/your-repo/audiobook_gen
-AppSupportURL=https://github.com/your-repo/audiobook_gen/issues
-AppUpdatesURL=https://github.com/your-repo/audiobook_gen/releases
+AppPublisher=SimpleAudioBookGen
+AppPublisherURL=https://github.com/alegp97/SimpleAudioBookGen
+AppSupportURL=https://github.com/alegp97/SimpleAudioBookGen/issues
+AppUpdatesURL=https://github.com/alegp97/SimpleAudioBookGen/releases
 
 ; Base Configuration
 DefaultDirName={autopf}\SimpleAudioBookGen

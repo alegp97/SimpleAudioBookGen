@@ -1,5 +1,5 @@
 audio:
-  mp3_bitrate: 320k
+  mp3_bitrate: 192k
   normalize_target_dbfs: -20.0
   sample_rate: 24000
   save_intermediate_wav: false
@@ -15,7 +15,7 @@ segmenter:
   max_chunk_chars: 500
   min_chunk_chars: 50
   respect_sentence_boundaries: true
-temp_dir: C:\Users\Usuario\AppData\Local\Temp\audiobook_gen
+temp_dir: audiobook_gen_temp
 tts:
   engine: edge
   language: Spanish

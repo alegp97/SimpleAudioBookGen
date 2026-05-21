@@ -54,3 +54,11 @@ Whether you have a text-based research paper or a scanned document, SimpleAudioB
 ## Support & Legal
 - **Support URL:** https://github.com/alegp97/SimpleAudioBookGen/issues
 - **Privacy Policy URL:** (To be hosted on a public URL, e.g., GitHub Pages or a Gist)
+
+---
+
+## Packaging Notes
+- Preferred Store package: MSIX upload (`.msixupload`) generated after associating the package identity with the reserved Partner Center app.
+- Alternative Store route: Win32 installer URL, using the Inno Setup installer from this repository.
+- Runtime data location: `%LOCALAPPDATA%\SimpleAudioBookGen` for user preferences and logs.
+- Build command: `python build.py`.

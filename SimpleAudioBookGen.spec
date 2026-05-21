@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['c:\\Users\\Usuario\\Desktop\\AudioBookGen\\audiobook_gen\\main.py'],
+    ['C:\\Users\\Usuario\\Desktop\\AudioBookGen\\audiobook_gen\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('c:\\Users\\Usuario\\Desktop\\AudioBookGen\\icon.ico', '.'), ('c:\\Users\\Usuario\\Desktop\\AudioBookGen\\.ffmpeg_bin', '.ffmpeg_bin'), ('c:\\Users\\Usuario\\Desktop\\AudioBookGen\\_build_assets\\tesseract_bin', 'tesseract_bin')],
+    datas=[('C:\\Users\\Usuario\\Desktop\\AudioBookGen\\icon.ico', '.'), ('C:\\Users\\Usuario\\Desktop\\AudioBookGen\\.ffmpeg_bin', '.ffmpeg_bin'), ('C:\\Users\\Usuario\\Desktop\\AudioBookGen\\_build_assets\\tesseract_bin', 'tesseract_bin'), ('C:\\Users\\Usuario\\Desktop\\AudioBookGen\\audiobook_gen\\rules', 'audiobook_gen/rules')],
     hiddenimports=['pytesseract', 'PIL', 'pydub', 'imageio_ffmpeg', 'audiobook_gen'],
     hookspath=[],
     hooksconfig={},
@@ -25,21 +25,21 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['c:\\Users\\Usuario\\Desktop\\AudioBookGen\\icon.ico'],
+    icon=['C:\\Users\\Usuario\\Desktop\\AudioBookGen\\icon.ico'],
 )
 coll = COLLECT(
     exe,
     a.binaries,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='SimpleAudioBookGen',
 )

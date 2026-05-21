@@ -30,6 +30,15 @@ coverage.xml
 # Executables & Packaging
 *.exe
 *.msi
+*.msix
+*.msixupload
+*.msixbundle
+*.appx
+*.appxupload
+*.appxbundle
+*.appinstaller
+*.cer
+*.pfx
 *.whl
 *.spec
 !SimpleAudioBookGen.spec
@@ -39,6 +48,8 @@ SimpleAudioBookGen.spec.local
 .ffmpeg_bin/
 _build_assets/
 installers/
+AppPackages/
+msix/
 
 # Application Logs & Temporary files
 *.log

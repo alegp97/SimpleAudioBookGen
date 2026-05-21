@@ -6,7 +6,7 @@ If you encounter any issues or have questions about SimpleAudioBookGen, please f
 To help us resolve the issue quickly, please provide the following information when opening a GitHub Issue:
 
 1.  **Windows Version:** (e.g., Windows 10, Windows 11)
-2.  **App Version:** (e.g., 0.1.0-beta)
+2.  **App Version:** (e.g., 0.2.0)
 3.  **Voice Mode Used:** (e.g., Natural Online, Offline Neural, etc.)
 4.  **PDF Type:** (Was it a text-based PDF or a scanned image PDF?)
 5.  **Error Message:** Please copy and paste any error message shown in the UI or in the `audiobook_gen.log` file.

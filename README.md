@@ -1,6 +1,6 @@
 # SimpleAudioBookGen — PDF to Audiobook
 
-[![Release](https://img.shields.io/badge/release-0.1.0--beta-blue.svg)](https://github.com/alegp97/SimpleAudioBookGen/releases)
+[![Release](https://img.shields.io/badge/release-0.2.0-blue.svg)](https://github.com/alegp97/SimpleAudioBookGen/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 
@@ -51,7 +51,7 @@ python -m venv .venv
 source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Run the application
 python -m audiobook_gen
@@ -67,7 +67,7 @@ To generate a standalone executable and installer:
     ```bash
     python build.py
     ```
-3.  **Generate Installer:** Use Inno Setup with the provided `installer.iss` file.
+3.  **Package for Microsoft Store:** Prefer MSIX/MSIX upload packaging for Store submission. The Inno Setup installer remains available for direct Win32 distribution.
 
 ---
 
@@ -88,5 +88,5 @@ Encountered a bug? Need help?
 ---
 
 ## 📜 License
-This project is licensed under the MIT License - see the `LICENSE` file for details (coming soon).
+This project is licensed under the MIT License - see the `LICENSE` file for details.
 Built with PySide6, PyMuPDF, and Edge-TTS.

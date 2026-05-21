@@ -13,6 +13,9 @@ project_root = str(Path(__file__).parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+from audiobook_gen import __version__
+from audiobook_gen.paths import ensure_user_data_dir, is_frozen
+
 def resource_path(relative_path: str) -> Path:
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -124,9 +127,17 @@ from audiobook_gen.config import Settings
 
 def config_path() -> Path:
     """Return the writable user configuration path."""
-    if getattr(sys, "frozen", False):
-        return Path(sys.executable).resolve().parent / "config.yaml"
+    if is_frozen():
+        return ensure_user_data_dir() / "config.yaml"
     return Path(__file__).parent.parent / "config.yaml"
+
+
+def log_path(configured_log_file: str) -> str:
+    """Return a writable log path, preserving explicit absolute paths."""
+    path = Path(configured_log_file)
+    if path.is_absolute() or not is_frozen():
+        return str(path)
+    return str(ensure_user_data_dir() / path.name)
 
 
 def main() -> None:
@@ -139,7 +150,7 @@ def main() -> None:
         settings = Settings()
 
     # Initialise logger
-    setup_logger(log_file=settings.log_file, debug=settings.debug)
+    setup_logger(log_file=log_path(settings.log_file), debug=settings.debug)
 
     # Import Qt after the environment has been set up
     from PySide6.QtWidgets import QApplication
@@ -159,7 +170,7 @@ def main() -> None:
     # Create the Qt application
     app = QApplication(sys.argv)
     app.setApplicationName("SimpleAudioBookGen")
-    app.setApplicationVersion("0.2.0")
+    app.setApplicationVersion(__version__)
 
     # Set the window icon
     icon_file = resource_path("icon.ico")

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Effective Date:** May 15, 2024
+**Effective Date:** May 21, 2026
 
 SimpleAudioBookGen ("the App") is a desktop application designed to convert PDF files into MP3 audiobooks. Your privacy is important to us. This policy explains how the App handles your data.
 
@@ -25,7 +25,7 @@ These modes process all text locally on your machine. No text is sent over the i
 If you choose to process a scanned PDF, the App may use Tesseract OCR. This process happens entirely on your local machine.
 
 ## 4. Logs and Debugging
-The App may generate local log files (`audiobook_gen.log`) on your computer for diagnostic purposes.
+The App may generate local log files (`audiobook_gen.log`) on your computer for diagnostic purposes. In packaged Windows builds, these logs are stored in the user's local application data folder.
 - These logs may contain technical information about the conversion process.
 - They are stored only on your device and are not automatically sent to us.
 
